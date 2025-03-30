@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 import io
 import base64
 
+
 class FinancialAnalyzer:
     def __init__(self):
         self.data = None
@@ -44,11 +45,6 @@ class FinancialAnalyzer:
         dict
             Dictionary containing analysis results
         """
-        # Check if data exists
-        if self.data is None:
-            st.error("No data loaded. Please upload a CSV file first.")
-            return {}
-            
         # Make a copy of the data to avoid modifying the original
         monthly_data = self.data.copy()
         
@@ -206,11 +202,6 @@ class FinancialAnalyzer:
         dict
             Dictionary containing analysis results and savings recommendations
         """
-        # Check if data exists
-        if self.data is None:
-            st.error("No data loaded. Please upload a CSV file first.")
-            return {}
-            
         # Default discretionary and essential categories if not provided
         if discretionary_categories is None:
             discretionary_categories = ['Dining', 'Entertainment', 'Shopping']
@@ -357,11 +348,6 @@ class FinancialAnalyzer:
         dict
             Dictionary containing analysis results and reduction strategies
         """
-        # Check if data exists
-        if self.data is None:
-            st.error("No data loaded. Please upload a CSV file first.")
-            return {}
-            
         # Default discretionary categories if not provided
         if discretionary_categories is None:
             discretionary_categories = ['Dining', 'Entertainment', 'Shopping']
@@ -543,11 +529,6 @@ class FinancialAnalyzer:
         pd.DataFrame
             DataFrame with filtered rows
         """
-        # Check if data exists
-        if self.data is None:
-            st.error("No data loaded. Please upload a CSV file first.")
-            return pd.DataFrame()
-            
         # Make a copy of the data to avoid modifying the original
         df = self.data.copy()
         
@@ -586,11 +567,6 @@ class FinancialAnalyzer:
         pd.DataFrame
             DataFrame with added day and week columns
         """
-        # Check if data exists
-        if self.data is None:
-            st.error("No data loaded. Please upload a CSV file first.")
-            return pd.DataFrame()
-            
         # Make a copy of the data to avoid modifying the original
         df = self.data.copy()
         
@@ -626,72 +602,15 @@ class FinancialAnalyzer:
 
 def main():
     st.set_page_config(page_title="Personal Finance Analyzer", layout="wide")
-    st.title("💰 Personal Finance Analyzer")
-    
-    # Initialize session state for tracking if file is uploaded
-    if 'data_loaded' not in st.session_state:
-        st.session_state.data_loaded = False
     
     analyzer = FinancialAnalyzer()
     
-    # Sidebar for file upload
-    with st.sidebar:
-        st.header("Upload Financial Data")
-        
-        uploaded_file = st.file_uploader(
-            "Upload a CSV file with your financial data",
-            type=["csv"],
-            help="Your file should have at least Date and Debit columns"
-        )
-        
-        # Process the uploaded file
-        if uploaded_file is not None:
-            # Load the data
-            data = analyzer.load_data(uploaded_file)
-            
-            # Set session state to indicate data is loaded
-            if 'Date' in data.columns and 'Debit' in data.columns:
-                st.session_state.data_loaded = True
-            
-            st.success(f"Loaded {len(data)} rows from {uploaded_file.name}")
-            
-            # Display data preview
-            st.subheader("Data Preview")
-            st.dataframe(data.head())
-            
-            # Data validation checks
-            if 'Date' not in data.columns:
-                st.error("Required 'Date' column not found in data!")
-                st.session_state.data_loaded = False
-            
-            if 'Debit' not in data.columns:
-                st.error("Required 'Debit' column not found in data!")
-                st.session_state.data_loaded = False
-        else:
-            # If the file is removed, reset the analyzer's data
-            if hasattr(analyzer, 'data') and analyzer.data is not None:
-                analyzer.data = None
-                analyzer.file_name = None
-                st.session_state.data_loaded = False
-        
-        # Reset button
-        if st.button("Reset App"):
-            st.session_state.data_loaded = False
-            # Clear the analyzer data
-            if hasattr(analyzer, 'data'):
-                analyzer.data = None
-                analyzer.file_name = None
-            st.session_state.clear()
-            st.experimental_rerun()
-    
-    # Main content area - show welcome screen or analysis tabs based on data_loaded state
-    if not st.session_state.data_loaded:
-        # Show welcome screen with HTML instead of Markdown
-        welcome_html = """
+    # Define welcome HTML content
+    welcome_html = """
         <div style="text-align: left; max-width: 800px; margin: 0 auto;">
             <h1>Personal Finance Analyzer</h1>
             <p style="font-size: 1.1rem;">A Streamlit application for analyzing personal financial data, spotting trends, and finding opportunities to reduce expenses.</p>
-            
+            <p style="font-size: 1.1rem;"><strong>GitHub Repository:</strong> <a href="https://github.com/firedynasty/personal_finance" target="_blank">https://github.com/firedynasty/personal_finance</a></p>
             <h2>Features</h2>
             <ul style="font-size: 1.05rem; line-height: 1.6;">
                 <li><strong>Monthly Spending Analysis</strong>: Visualize spending patterns and project your end-of-month total</li>
@@ -828,23 +747,490 @@ def main():
             <hr style="margin: 30px 0;">
             <p style="font-style: italic; text-align: center;">Please upload your financial data CSV file using the sidebar to begin analysis.</p>
         </div>
-        """
+    """
+    
+    # Initialize session state for tracking if welcome page has been shown
+    if 'show_welcome' not in st.session_state:
+        st.session_state.show_welcome = True
+    
+    # Function to toggle welcome screen
+    def toggle_welcome_screen():
+        st.session_state.show_welcome = not st.session_state.show_welcome
+    
+    # Function to hide welcome screen when file browser is opened
+    def on_file_browser_interaction():
+        st.session_state.show_welcome = False
+    
+    # Sidebar for file upload
+    with st.sidebar:
+        st.header("Upload Financial Data")
         
-        # Display the HTML welcome screen
-        st.html(welcome_html, height=800)
-    else:
-        # Check if analyzer still has data loaded
-        if analyzer.data is None and uploaded_file is not None:
-            data = analyzer.load_data(uploaded_file)</li>
-            </ul>
+        uploaded_file = st.file_uploader(
+            "Upload a CSV file with your financial data",
+            type=["csv"],
+            help="Your file should have at least Date and Debit columns",
+            on_change=on_file_browser_interaction  # Hide instructions when user interacts with file uploader
+        )
+        
+        # Add a button to show/hide instructions
+        if st.session_state.show_welcome:
+            button_text = "Hide Instructions"
+        else:
+            button_text = "Show Instructions"
             
-            <h2>License</h2>
-            <p>This project is licensed under the MIT License - see the LICENSE file for details.</p>
+        st.button(button_text, on_click=toggle_welcome_screen)
+        
+        # Show data info when file is uploaded
+        if uploaded_file is not None:
+            # Load the data
+            data = analyzer.load_data(uploaded_file)
+            st.success(f"Loaded {len(data)} rows from {uploaded_file.name}")
             
-            <hr style="margin: 30px 0;">
-            <p style="font-style: italic; text-align: center;">Please upload your financial data CSV file using the sidebar to begin analysis.</p>
-        </div>
-        """
+            # Display data preview
+            st.subheader("Data Preview")
+            st.dataframe(data.head())
+            
+            # Data validation checks
+            if 'Date' not in data.columns:
+                st.error("Required 'Date' column not found in data!")
+            
+            if 'Debit' not in data.columns:
+                st.error("Required 'Debit' column not found in data!")
+    
+    # Show the welcome screen if toggle is on
+    if st.session_state.show_welcome:
+        # Display welcome HTML using components.v1.html for proper rendering
+        st.components.v1.html(welcome_html, height=1800, scrolling=True)
+    
+    # Always show analysis content when a file is uploaded (regardless of welcome screen state)
+    if uploaded_file is not None and 'Date' in analyzer.data.columns and 'Debit' in analyzer.data.columns:
+        # Display the app title
+        st.title("💰 Personal Finance Analyzer")
+        
+        # Display content in tabs
+        tabs = st.tabs(["Monthly Analysis", "Spending Reduction", "Weekly Analysis", "Data Utilities"])
+        
+        # --- Monthly Spending Analysis Tab ---
+        with tabs[0]:
+            st.header("Monthly Spending Analysis")
+            
+            # Run the analysis
+            results = analyzer.analyze_monthly_spending()
+            
+            # Display results in columns
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Monthly Summary")
+                st.metric("Total Spending", f"${results['total_spending']:.2f}")
+                st.metric("Daily Average", f"${results['daily_average']:.2f}")
+                st.metric("Transaction Count", results['transaction_count'])
+                
+                if 'projected_total' in results:
+                    st.metric("Projected Total", f"${results['projected_total']:.2f}", 
+                              f"${results['projected_additional']:.2f}")
+            
+            with col2:
+                if 'category_breakdown' in results and results['category_breakdown']:
+                    st.subheader("Top Spending Categories")
+                    for cat in results.get('top_categories', []):
+                        st.metric(cat['category'], f"${cat['sum']:.2f}")
+            
+            # Show charts
+            st.subheader("Spending Projections")
+            if 'projection_chart' in results:
+                st.pyplot(results['projection_chart'])
+                
+            col3, col4 = st.columns(2)
+            
+            with col3:
+                if 'category_chart' in results:
+                    st.subheader("Category Breakdown")
+                    st.pyplot(results['category_chart'])
+            
+            with col4:
+                if 'day_of_week_chart' in results:
+                    st.subheader("Spending by Day of Week")
+                    st.pyplot(results['day_of_week_chart'])
+            
+            if 'weekly_chart' in results:
+                st.subheader("Weekly Spending Pattern")
+                st.pyplot(results['weekly_chart'])
+        
+        # --- Spending Reduction Tab ---
+        with tabs[1]:
+            st.header("Spending Reduction Analysis")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.subheader("Configure Analysis")
+                
+                # Get actual categories from data
+                available_categories = list(analyzer.data['category'].unique()) if 'category' in analyzer.data.columns else []
+                
+                # Default discretionary and essential categories
+                default_discretionary = ['Dining', 'Entertainment', 'Shopping']
+                default_essential = ['Groceries', 'Utilities', 'Rent', 'Bills']
+                
+                # Filter defaults to only include categories that exist in the data
+                available_disc = [cat for cat in default_discretionary if cat in available_categories]
+                available_ess = [cat for cat in default_essential if cat in available_categories]
+                
+                # If none of the defaults exist, use empty lists as defaults
+                disc_default = available_disc if available_disc else []
+                ess_default = available_ess if available_ess else []
+                
+                discretionary_cats = st.multiselect(
+                    "Discretionary Categories",
+                    options=available_categories,
+                    default=disc_default
+                )
+                
+                essential_cats = st.multiselect(
+                    "Essential Categories",
+                    options=available_categories,
+                    default=ess_default
+                )
+                
+                reduction_target = st.slider("Reduction Target (%)", 5, 50, 20) / 100
+                
+                run_reduction = st.button("Run Spending Reduction Analysis")
+            
+            with col2:
+                st.subheader("About Spending Reduction")
+                st.write("""
+                This analysis identifies discretionary vs. essential spending and recommends ways to reduce expenses.
+                - **Discretionary Categories**: Non-essential spending that can be reduced
+                - **Essential Categories**: Necessary expenses that are harder to reduce
+                - **Reduction Target**: The percentage by which to reduce discretionary spending
+                """)
+            
+            with col3:
+                st.image("https://cdn.pixabay.com/photo/2016/10/09/19/19/coins-1726618_960_720.jpg", width=200)
+                st.caption("Set a spending reduction goal that is challenging but achievable")
+            
+            if run_reduction or 'reduction_results' in st.session_state:
+                # If first time or button pressed, run the analysis
+                if run_reduction or 'reduction_results' not in st.session_state:
+                    reduction_results = analyzer.analyze_spending_reduction(
+                        discretionary_categories=discretionary_cats,
+                        essential_categories=essential_cats,
+                        reduction_target=reduction_target
+                    )
+                    st.session_state.reduction_results = reduction_results
+                else:
+                    # Use cached results
+                    reduction_results = st.session_state.reduction_results
+                
+                st.divider()
+                
+                # Display results in a nice format
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Total Spending", f"${reduction_results['total_spending']:.2f}")
+                
+                with col2:
+                    st.metric("Discretionary Spending", 
+                             f"${reduction_results['discretionary_spending']:.2f}",
+                             f"{reduction_results['discretionary_spending']/reduction_results['total_spending']*100:.1f}% of total")
+                
+                with col3:
+                    st.metric("Potential Monthly Savings", 
+                             f"${reduction_results['potential_savings']:.2f}",
+                             f"{reduction_target*100:.0f}% of discretionary")
+                
+                # Charts
+                if 'spending_distribution_chart' in reduction_results:
+                    st.pyplot(reduction_results['spending_distribution_chart'])
+                
+                # Savings recommendations
+                st.subheader("Savings Recommendations by Category")
+                if reduction_results['category_savings']:
+                    savings_df = pd.DataFrame(reduction_results['category_savings'])
+                    
+                    # Create a cleaner display version
+                    display_df = savings_df.copy()
+                    display_df.columns = ['Category', 'Current Amount', 'Target Amount', 'Savings']
+                    display_df['Current Amount'] = display_df['Current Amount'].map('${:.2f}'.format)
+                    display_df['Target Amount'] = display_df['Target Amount'].map('${:.2f}'.format)
+                    display_df['Savings'] = display_df['Savings'].map('${:.2f}'.format)
+                    
+                    st.dataframe(display_df, use_container_width=True)
+                else:
+                    st.info("No category savings recommendations available. Make sure you have category data in your CSV.")
+                
+                # High spending days
+                if reduction_results['high_spending_days']:
+                    st.subheader("High-Spending Days to Be Cautious About")
+                    days_df = pd.DataFrame(reduction_results['high_spending_days'])
+                    
+                    # Create a cleaner display version
+                    display_days = days_df.copy()
+                    display_days.columns = ['Day', 'Amount', 'Above Average']
+                    display_days['Amount'] = display_days['Amount'].map('${:.2f}'.format)
+                    display_days['Above Average'] = display_days['Above Average'].map('${:.2f}'.format)
+                    
+                    st.dataframe(display_days, use_container_width=True)
+                
+                # Additional strategies
+                st.subheader("Additional Strategies")
+                
+                strategies = []
+                
+                if reduction_results['high_spending_days']:
+                    highest_day = max(reduction_results['high_spending_days'], key=lambda x: x['amount'])
+                    strategies.append(f"1. Consider implementing a budget cap for {highest_day['day']}s")
+                
+                if len(reduction_results['category_savings']) > 0:
+                    top_saving_cat = max(reduction_results['category_savings'], key=lambda x: x['savings'])
+                    strategies.append(f"2. Focus on reducing {top_saving_cat['category']} expenses for biggest impact")
+                
+                for strategy in strategies:
+                    st.markdown(f"- {strategy}")
+                
+                if not strategies:
+                    st.info("No additional strategies available based on your data.")
+        
+        # --- Weekly Analysis Tab ---
+        with tabs[2]:
+            st.header("Weekly Spending Analysis")
+            
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.subheader("Configure Analysis")
+                
+                # Get actual categories from data
+                available_categories = list(analyzer.data['category'].unique()) if 'category' in analyzer.data.columns else []
+                
+                # Default discretionary and essential categories
+                default_discretionary = ['Dining', 'Entertainment', 'Shopping']
+                default_essential = ['Groceries', 'Utilities', 'Rent', 'Bills']
+                
+                # Filter defaults to only include categories that exist in the data
+                available_disc = [cat for cat in default_discretionary if cat in available_categories]
+                available_ess = [cat for cat in default_essential if cat in available_categories]
+                
+                # If none of the defaults exist, use empty lists as defaults
+                disc_default = available_disc if available_disc else []
+                ess_default = available_ess if available_ess else []
+                
+                disc_cats_weekly = st.multiselect(
+                    "Discretionary Categories",
+                    options=available_categories,
+                    default=disc_default,
+                    key="disc_cats_weekly"
+                )
+                
+                weekly_savings = st.slider("Weekly Savings Target (%)", 5, 30, 10, key="weekly_savings") / 100
+                daily_reduction = st.slider("Daily Reduction Target (%)", 5, 50, 20, key="daily_reduction") / 100
+                category_reduction = st.slider("Category Reduction Target (%)", 5, 50, 25, key="category_reduction") / 100
+                
+                run_weekly = st.button("Run Weekly Analysis")
+            
+            with col2:
+                st.subheader("About Weekly Analysis")
+                st.write("""
+                This analysis examines your spending patterns by week and day of week to identify:
+                
+                - **Weekly Patterns**: How your spending varies across weeks of the month
+                - **Daily Patterns**: Which days of the week have the highest spending
+                - **Category Trends**: How category spending changes throughout the month
+                
+                The analysis will provide targeted strategies to reduce spending based on these patterns.
+                """)
+            
+            if run_weekly or 'weekly_results' in st.session_state:
+                # If first time or button pressed, run the analysis
+                if run_weekly or 'weekly_results' not in st.session_state:
+                    weekly_results = analyzer.analyze_weekly_spending(
+                        discretionary_categories=disc_cats_weekly,
+                        weekly_savings_target=weekly_savings,
+                        daily_reduction_target=daily_reduction,
+                        category_reduction_target=category_reduction
+                    )
+                    st.session_state.weekly_results = weekly_results
+                else:
+                    # Use cached results
+                    weekly_results = st.session_state.weekly_results
+                
+                st.divider()
+                
+                # Display visualizations
+                if 'weekly_analysis_chart' in weekly_results:
+                    st.pyplot(weekly_results['weekly_analysis_chart'])
+                
+                # Weekly insights section
+                st.subheader("Weekly Spending Insights")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric("Average Weekly Spending", f"${weekly_results['weekly_average']:.2f}")
+                    
+                    if weekly_results['high_spending_weeks']:
+                        st.subheader("High-Spending Weeks")
+                        for week_info in weekly_results['high_spending_weeks']:
+                            with st.expander(f"Week {week_info['week']} (${week_info['amount']:.2f})"):
+                                st.write(f"Exceeds weekly average by ${week_info['above_average']:.2f}")
+                                if week_info['top_categories']:
+                                    st.write("Top spending categories this week:")
+                                    for cat, cat_amount in week_info['top_categories'].items():
+                                        st.write(f"- {cat}: ${cat_amount:.2f}")
+                
+                with col2:
+                    st.metric("Average Daily Spending", f"${weekly_results['daily_average']:.2f}")
+                    
+                    if weekly_results['high_spending_days']:
+                        st.subheader("High-Spending Days")
+                        for day_info in weekly_results['high_spending_days']:
+                            with st.expander(f"{day_info['day']} (${day_info['amount']:.2f})"):
+                                st.write(f"Exceeds daily average by ${day_info['above_average']:.2f}")
+                                if day_info['top_categories']:
+                                    st.write(f"Top {day_info['day']} categories:")
+                                    for cat, cat_amount in day_info['top_categories'].items():
+                                        st.write(f"- {cat}: ${cat_amount:.2f}")
+                
+                # Weekly reduction plan
+                st.subheader("Weekly Spending Reduction Plan")
+                st.metric("Weekly Savings Target", f"${weekly_results['weekly_savings_target']:.2f}")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if "day_reduction_strategy" in weekly_results:
+                        day_strategy = weekly_results["day_reduction_strategy"]
+                        st.write(f"### Strategy 1: Reduce {day_strategy['day']} Spending")
+                        st.write(f"Current: ${day_strategy['current_amount']:.2f}")
+                        st.write(f"Target: ${day_strategy['target_amount']:.2f}")
+                        st.metric("Weekly Savings", f"${day_strategy['savings']:.2f}")
+                
+                with col2:
+                    if "category_reduction_strategy" in weekly_results:
+                        cat_strategy = weekly_results["category_reduction_strategy"]
+                        st.write(f"### Strategy 2: Reduce {cat_strategy['category']} Spending")
+                        st.write(f"Current weekly: ${cat_strategy['weekly_amount']:.2f}")
+                        st.write(f"Target weekly: ${cat_strategy['target_weekly']:.2f}")
+                        st.metric("Weekly Savings", f"${cat_strategy['weekly_savings']:.2f}")
+                
+                # Download weekly analysis report
+                weekly_report = f"""
+                # Weekly Spending Analysis Report
+                
+                ## Summary Statistics
+                - Total Spending: ${weekly_results['total_spending']:.2f}
+                - Average Weekly Spending: ${weekly_results['weekly_average']:.2f}
+                - Average Daily Spending: ${weekly_results['daily_average']:.2f}
+                - Weekly Savings Target: ${weekly_results['weekly_savings_target']:.2f}
+                
+                ## Reduction Strategies
+                """
+                
+                if "day_reduction_strategy" in weekly_results:
+                    day_strategy = weekly_results["day_reduction_strategy"]
+                    weekly_report += f"""
+                    ### Strategy 1: Reduce {day_strategy['day']} Spending
+                    - Current: ${day_strategy['current_amount']:.2f}
+                    - Target: ${day_strategy['target_amount']:.2f}
+                    - Weekly Savings: ${day_strategy['savings']:.2f}
+                    """
+                
+                if "category_reduction_strategy" in weekly_results:
+                    cat_strategy = weekly_results["category_reduction_strategy"]
+                    weekly_report += f"""
+                    ### Strategy 2: Reduce {cat_strategy['category']} Spending
+                    - Current weekly: ${cat_strategy['weekly_amount']:.2f}
+                    - Target weekly: ${cat_strategy['target_weekly']:.2f}
+                    - Weekly Savings: ${cat_strategy['weekly_savings']:.2f}
+                    """
+                
+                # Download report button placeholder
+                st.download_button(
+                    "Download Weekly Analysis Report",
+                    weekly_report,
+                    file_name="weekly_spending_analysis.txt",
+                    mime="text/plain"
+                )
+        
+        # --- Data Utilities Tab ---
+        with tabs[3]:
+            st.header("Data Utilities")
+            
+            # Subtabs for different utilities
+            subtabs = st.tabs(["Add Day/Week Columns", "Extract Recurring Expenses"])
+            
+            # Add Day/Week Columns
+            with subtabs[0]:
+                st.subheader("Add Day and Week Columns")
+                st.write("""
+                This utility adds two helpful columns to your financial data:
+                - **day**: Day of the week with a prefix for sorting (e.g., '1Monday', '2Tuesday')
+                - **week**: Week of the month (1-5)
+                """)
+                
+                date_format = st.text_input("Date Format", value="%m/%d/%y", 
+                                          help="Format of your date column, e.g., %m/%d/%y for MM/DD/YY")
+                
+                if st.button("Add Day/Week Columns"):
+                    enhanced_df = analyzer.add_day_week_columns(date_format=date_format)
+                    
+                    # Display preview with improved row count visibility
+                    st.subheader("Preview of Enhanced Data")
+                    st.write(f"Total rows in dataset: {len(enhanced_df)}")
+                    
+                    # Show all rows directly without slider
+                    st.dataframe(enhanced_df)
+                    
+                    # Add download button with row count
+                    st.markdown(
+                        analyzer.get_download_link(enhanced_df, 
+                                                 filename=f"{os.path.splitext(analyzer.file_name)[0]}_enhanced.csv",
+                                                 text=f"📥 Download Enhanced CSV ({len(enhanced_df)} rows)"),
+                        unsafe_allow_html=True
+                    )
+            
+            # Extract Recurring Expenses
+            with subtabs[1]:
+                st.subheader("Extract Recurring Expenses")
+                st.write("""
+                This utility extracts all expenses that are not marked as 'onetime' in the 'kind' column.
+                It helps identify recurring payments and subscriptions.
+                
+                Note: Your data must have a 'kind' column with values like 'recurring', 'subscription', etc.
+                """)
+                
+                if st.button("Extract Recurring Expenses"):
+                    if 'kind' in analyzer.data.columns:
+                        recurring_df = analyzer.print_non_onetime_rows()
+                        
+                        if not recurring_df.empty:
+                            # Calculate total
+                            total_amount = recurring_df['Debit'].sum() if 'Debit' in recurring_df.columns else 0
+                            
+                            # Display stats
+                            st.metric("Recurring Expenses Count", len(recurring_df))
+                            st.metric("Total Recurring Amount", f"${total_amount:.2f}")
+                            
+                            # Display data with improved row count visibility
+                            st.write(f"Total recurring expenses: {len(recurring_df)} rows")
+                            
+                            # Show all rows directly without slider
+                            st.dataframe(recurring_df)
+                            
+                            # Add download button with row count
+                            st.markdown(
+                                analyzer.get_download_link(recurring_df, 
+                                                         filename="recurring_expenses.csv",
+                                                         text=f"📥 Download Recurring Expenses ({len(recurring_df)} rows)"),
+                                unsafe_allow_html=True
+                            )
+                        else:
+                            st.warning("No recurring expenses found in your data.")
+                    else:
+                        st.error("Your data does not have a 'kind' column which is required for this analysis.")
+                        st.info("The 'kind' column should categorize expenses as 'recurring', 'subscription', 'onetime', etc.")
 
 if __name__ == "__main__":
     main()
