@@ -1,0 +1,36 @@
+Date,description,category,kind,Debit,Credit,day,week
+2025-03-01,Grocery Store,Groceries,recurring,89.45,0,6Saturday,1
+2025-03-01,Monthly Rent Payment,Rent,recurring,1450.0,0,6Saturday,1
+2025-03-02,Coffee Shop,Dining,recurring,4.5,0,7Sunday,1
+2025-03-03,Gas Station,Transportation,recurring,45.32,0,1Monday,1
+2025-03-04,Online Subscription,Subscriptions,recurring,12.99,0,2Tuesday,1
+2025-03-05,Pharmacy,Health,onetime,28.76,0,3Wednesday,1
+2025-03-06,Restaurant Dinner,Dining,onetime,65.87,0,4Thursday,1
+2025-03-07,Movie Tickets,Entertainment,onetime,32.5,0,5Friday,1
+2025-03-08,Grocery Store,Groceries,recurring,75.68,0,6Saturday,2
+2025-03-09,Mobile Phone Bill,Bills,recurring,85.0,0,7Sunday,2
+2025-03-10,Internet Service,Utilities,recurring,69.99,0,1Monday,2
+2025-03-10,Clothing Store,Shopping,onetime,124.87,0,1Monday,2
+2025-03-11,Coffee Shop,Dining,recurring,4.5,0,2Tuesday,2
+2025-03-12,Public Transportation,Transportation,recurring,25.0,0,3Wednesday,2
+2025-03-13,Lunch at Work,Dining,recurring,10.75,0,4Thursday,2
+2025-03-14,Birthday Gift,Shopping,onetime,50.0,0,5Friday,2
+2025-03-15,Grocery Store,Groceries,recurring,92.34,0,6Saturday,3
+2025-03-15,Electricity Bill,Utilities,recurring,115.67,0,6Saturday,3
+2025-03-16,Video Streaming Service,Subscriptions,recurring,14.99,0,7Sunday,3
+2025-03-17,Car Repair,Transportation,onetime,285.43,0,1Monday,3
+2025-03-18,Coffee Shop,Dining,recurring,4.5,0,2Tuesday,3
+2025-03-19,Lunch at Work,Dining,recurring,12.25,0,3Wednesday,3
+2025-03-20,Gym Membership,Health,recurring,45.0,0,4Thursday,3
+2025-03-21,Concert Tickets,Entertainment,onetime,120.0,0,5Friday,3
+2025-03-22,Grocery Store,Groceries,recurring,105.32,0,6Saturday,4
+2025-03-23,Music Subscription,Subscriptions,recurring,9.99,0,7Sunday,4
+2025-03-24,Gas Station,Transportation,recurring,42.56,0,1Monday,4
+2025-03-25,Coffee Shop,Dining,recurring,4.5,0,2Tuesday,4
+2025-03-26,Lunch at Work,Dining,recurring,11.5,0,3Wednesday,4
+2025-03-27,Water Bill,Utilities,recurring,42.75,0,4Thursday,4
+2025-03-28,New Shoes,Shopping,onetime,89.95,0,5Friday,4
+2025-03-29,Grocery Store,Groceries,recurring,78.65,0,6Saturday,5
+2025-03-29,Home Insurance,Insurance,recurring,115.0,0,6Saturday,5
+2025-03-30,Online Purchase,Shopping,onetime,34.99,0,7Sunday,5
+2025-03-31,Restaurant Dinner,Dining,onetime,72.5,0,1Monday,5

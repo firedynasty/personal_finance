@@ -1,0 +1,36 @@
+Date,description,category,kind,Debit,Credit
+03/01/25,Grocery Store,Groceries,recurring,89.45,0
+03/01/25,Monthly Rent Payment,Rent,recurring,1450.00,0
+03/02/25,Coffee Shop,Dining,recurring,4.50,0
+03/03/25,Gas Station,Transportation,recurring,45.32,0
+03/04/25,Online Subscription,Subscriptions,recurring,12.99,0
+03/05/25,Pharmacy,Health,onetime,28.76,0
+03/06/25,Restaurant Dinner,Dining,onetime,65.87,0
+03/07/25,Movie Tickets,Entertainment,onetime,32.50,0
+03/08/25,Grocery Store,Groceries,recurring,75.68,0
+03/09/25,Mobile Phone Bill,Bills,recurring,85.00,0
+03/10/25,Internet Service,Utilities,recurring,69.99,0
+03/10/25,Clothing Store,Shopping,onetime,124.87,0
+03/11/25,Coffee Shop,Dining,recurring,4.50,0
+03/12/25,Public Transportation,Transportation,recurring,25.00,0
+03/13/25,Lunch at Work,Dining,recurring,10.75,0
+03/14/25,Birthday Gift,Shopping,onetime,50.00,0
+03/15/25,Grocery Store,Groceries,recurring,92.34,0
+03/15/25,Electricity Bill,Utilities,recurring,115.67,0
+03/16/25,Video Streaming Service,Subscriptions,recurring,14.99,0
+03/17/25,Car Repair,Transportation,onetime,285.43,0
+03/18/25,Coffee Shop,Dining,recurring,4.50,0
+03/19/25,Lunch at Work,Dining,recurring,12.25,0
+03/20/25,Gym Membership,Health,recurring,45.00,0
+03/21/25,Concert Tickets,Entertainment,onetime,120.00,0
+03/22/25,Grocery Store,Groceries,recurring,105.32,0
+03/23/25,Music Subscription,Subscriptions,recurring,9.99,0
+03/24/25,Gas Station,Transportation,recurring,42.56,0
+03/25/25,Coffee Shop,Dining,recurring,4.50,0
+03/26/25,Lunch at Work,Dining,recurring,11.50,0
+03/27/25,Water Bill,Utilities,recurring,42.75,0
+03/28/25,New Shoes,Shopping,onetime,89.95,0
+03/29/25,Grocery Store,Groceries,recurring,78.65,0
+03/29/25,Home Insurance,Insurance,recurring,115.00,0
+03/30/25,Online Purchase,Shopping,onetime,34.99,0
+03/31/25,Restaurant Dinner,Dining,onetime,72.50,0
