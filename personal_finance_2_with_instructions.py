@@ -13,6 +13,7 @@ class FinancialAnalyzer:
     def __init__(self):
         self.data = None
         self.file_name = None
+        self.column_mapping = {}
     
     def load_data(self, file):
         """Load data from uploaded file or file path"""
@@ -22,12 +23,20 @@ class FinancialAnalyzer:
         else:  # Uploaded file
             self.data = pd.read_csv(file)
             self.file_name = file.name
+            
+        # Create a mapping of lowercase column names to actual column names
+        self.column_mapping = {col.lower(): col for col in self.data.columns}
         
-        # Convert Date column to datetime
-        if 'Date' in self.data.columns:
-            self.data['Date'] = pd.to_datetime(self.data['Date'])
+        # Convert Date column to datetime (handle case-insensitively)
+        date_col = self.get_column('date')
+        if date_col:
+            self.data[date_col] = pd.to_datetime(self.data[date_col])
         
         return self.data
+        
+    def get_column(self, col_name):
+        """Get the actual column name regardless of case"""
+        return self.column_mapping.get(col_name.lower())
     
     def analyze_monthly_spending(self, month_days=None, output_path=None):
         """
@@ -48,11 +57,19 @@ class FinancialAnalyzer:
         # Make a copy of the data to avoid modifying the original
         monthly_data = self.data.copy()
         
+        # Get the actual column names (case-insensitive)
+        date_col = self.get_column('date')
+        debit_col = self.get_column('debit')
+        
+        if not date_col or not debit_col:
+            st.error("Required 'Date' and 'Debit' columns not found in data!")
+            return {}
+        
         # Determine days in month if not provided
         if month_days is None:
             # Get the month from the data
-            current_month = monthly_data['Date'].dt.month.value_counts().idxmax()
-            current_year = monthly_data['Date'].dt.year.value_counts().idxmax()
+            current_month = monthly_data[date_col].dt.month.value_counts().idxmax()
+            current_year = monthly_data[date_col].dt.year.value_counts().idxmax()
             
             # Calculate days in this month
             if current_month in [4, 6, 9, 11]:
@@ -67,23 +84,23 @@ class FinancialAnalyzer:
                 month_days = 31
         
         # Add day-of-month and day-of-week features
-        monthly_data['day'] = monthly_data['Date'].dt.day
-        monthly_data['day_of_week'] = monthly_data['Date'].dt.dayofweek
-        monthly_data['day_name'] = monthly_data['Date'].dt.day_name()
+        monthly_data['day'] = monthly_data[date_col].dt.day
+        monthly_data['day_of_week'] = monthly_data[date_col].dt.dayofweek
+        monthly_data['day_name'] = monthly_data[date_col].dt.day_name()
 
         # Analyze spending by day
-        daily_spending = monthly_data.groupby('day')['Debit'].sum().reset_index()
+        daily_spending = monthly_data.groupby('day')[debit_col].sum().reset_index()
         
         # Calculate cumulative spending
-        daily_spending['cumulative'] = daily_spending['Debit'].cumsum()
+        daily_spending['cumulative'] = daily_spending[debit_col].cumsum()
         
         # Initialize results dictionary
         results = {
-            "total_spending": daily_spending['Debit'].sum(),
-            "daily_average": daily_spending['Debit'].mean(),
+            "total_spending": daily_spending[debit_col].sum(),
+            "daily_average": daily_spending[debit_col].mean(),
             "transaction_count": len(monthly_data),
             "days_analyzed": len(daily_spending),
-            "highest_day": daily_spending.loc[daily_spending['Debit'].idxmax(), 'day']
+            "highest_day": daily_spending.loc[daily_spending[debit_col].idxmax(), 'day']
         }
         
         # Simple prediction for remaining days (if not end of month)
@@ -126,17 +143,18 @@ class FinancialAnalyzer:
             results["projected_additional"] = 0
         
         # Category-based analysis
-        if 'category' in monthly_data.columns:
-            category_spending = monthly_data.groupby('category')['Debit'].agg(['sum', 'count', 'mean']).reset_index()
+        category_col = self.get_column('category')
+        if category_col and category_col in monthly_data.columns:
+            category_spending = monthly_data.groupby(category_col)[debit_col].agg(['sum', 'count', 'mean']).reset_index()
             category_spending = category_spending.sort_values('sum', ascending=False)
             
             # Add category insights
-            results["top_categories"] = category_spending.head(3)[['category', 'sum']].to_dict('records')
+            results["top_categories"] = category_spending.head(3)[[category_col, 'sum']].to_dict('records')
             results["category_breakdown"] = category_spending.to_dict('records')
             
             # Create category visualization
             fig, ax = plt.subplots(figsize=(10, 6))
-            ax.bar(category_spending.head(10)['category'], category_spending.head(10)['sum'])
+            ax.bar(category_spending.head(10)[category_col], category_spending.head(10)['sum'])
             ax.set_xlabel('Category')
             ax.set_ylabel('Total Spending ($)')
             ax.set_title('Top 10 Spending Categories')
@@ -146,13 +164,13 @@ class FinancialAnalyzer:
             results["category_chart"] = fig
         
         # Day of week analysis
-        day_of_week_spending = monthly_data.groupby(['day_of_week', 'day_name'])['Debit'].sum().reset_index()
+        day_of_week_spending = monthly_data.groupby(['day_of_week', 'day_name'])[debit_col].sum().reset_index()
         day_of_week_spending = day_of_week_spending.sort_values('day_of_week')
         results["day_of_week_spending"] = day_of_week_spending.to_dict('records')
         
         # Create day of week visualization
         day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        day_data = day_of_week_spending.set_index('day_name')['Debit'].reindex(day_order).fillna(0)
+        day_data = day_of_week_spending.set_index('day_name')[debit_col].reindex(day_order).fillna(0)
         
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(day_data.index, day_data.values)
@@ -168,12 +186,12 @@ class FinancialAnalyzer:
         if len(daily_spending) >= 7:
             # Add week number
             monthly_data['week'] = ((monthly_data['day'] - 1) // 7) + 1
-            weekly_spending = monthly_data.groupby('week')['Debit'].sum().reset_index()
+            weekly_spending = monthly_data.groupby('week')[debit_col].sum().reset_index()
             results["weekly_spending"] = weekly_spending.to_dict('records')
             
             # Create weekly spending visualization
             fig, ax = plt.subplots(figsize=(10, 5))
-            ax.bar(weekly_spending['week'], weekly_spending['Debit'])
+            ax.bar(weekly_spending['week'], weekly_spending[debit_col])
             ax.set_xlabel('Week of Month')
             ax.set_ylabel('Total Spending ($)')
             ax.set_title('Weekly Spending Pattern')
@@ -202,6 +220,12 @@ class FinancialAnalyzer:
         dict
             Dictionary containing analysis results and savings recommendations
         """
+        # Helper function for case-insensitive category matching
+        def matches_category(category_str, target_list):
+            if not isinstance(category_str, str):
+                return False
+            category_lower = category_str.lower()
+            return any(isinstance(t, str) and t.lower() == category_lower for t in target_list)
         # Default discretionary and essential categories if not provided
         if discretionary_categories is None:
             discretionary_categories = ['Dining', 'Entertainment', 'Shopping']
@@ -221,10 +245,17 @@ class FinancialAnalyzer:
             category_totals = monthly_data.groupby('category')['Debit'].sum()
             top_categories = category_totals.sort_values(ascending=False)
             
-            # Find discretionary vs. essential spending
+            # Find discretionary vs. essential spending (case-insensitive)
             # Filter to only include categories that exist in the data
-            existing_disc_categories = [cat for cat in discretionary_categories if cat in category_totals.index]
-            existing_ess_categories = [cat for cat in essential_categories if cat in category_totals.index]
+            existing_disc_categories = []
+            existing_ess_categories = []
+            
+            # For each category in the data, check if it matches (case-insensitive) any in the discretionary/essential lists
+            for cat in category_totals.index:
+                if matches_category(cat, discretionary_categories):
+                    existing_disc_categories.append(cat)
+                elif matches_category(cat, essential_categories):
+                    existing_ess_categories.append(cat)
             
             # If none of the predefined categories exist in the data, identify top 3 as discretionary
             if not existing_disc_categories:
@@ -348,6 +379,12 @@ class FinancialAnalyzer:
         dict
             Dictionary containing analysis results and reduction strategies
         """
+        # Helper function for case-insensitive category matching
+        def matches_category(category_str, target_list):
+            if not isinstance(category_str, str):
+                return False
+            category_lower = category_str.lower()
+            return any(isinstance(t, str) and t.lower() == category_lower for t in target_list)
         # Default discretionary categories if not provided
         if discretionary_categories is None:
             discretionary_categories = ['Dining', 'Entertainment', 'Shopping']
@@ -492,13 +529,18 @@ class FinancialAnalyzer:
             }
         
         # Get top discretionary category (if category column exists)
-        if 'category' in monthly_data.columns:
-            discretionary_cats_in_data = [cat for cat in discretionary_categories if cat in monthly_data['category'].unique()]
+        category_col = self.get_column('category')
+        if category_col:
+            # Match categories case-insensitively
+            discretionary_cats_in_data = []
+            for cat in monthly_data[category_col].unique():
+                if matches_category(cat, discretionary_categories):
+                    discretionary_cats_in_data.append(cat)
             
             if discretionary_cats_in_data:
-                disc_spending = monthly_data[monthly_data['category'].isin(discretionary_cats_in_data)]
+                disc_spending = monthly_data[monthly_data[category_col].isin(discretionary_cats_in_data)]
                 if not disc_spending.empty:
-                    top_disc = disc_spending.groupby('category')['Debit'].sum().sort_values(ascending=False).head(1)
+                    top_disc = disc_spending.groupby(category_col)[debit_col].sum().sort_values(ascending=False).head(1)
                     if not top_disc.empty:
                         top_disc_cat = top_disc.index[0]
                         top_disc_amount = top_disc.values[0]
@@ -532,13 +574,17 @@ class FinancialAnalyzer:
         # Make a copy of the data to avoid modifying the original
         df = self.data.copy()
         
+        # Get column names (case-insensitive)
+        kind_col = self.get_column('kind')
+        debit_col = self.get_column('debit')
+        
         # Check if 'kind' column exists
-        if 'kind' not in df.columns:
+        if not kind_col or kind_col not in df.columns:
             st.error("'kind' column not found in the CSV file.")
             return pd.DataFrame()
             
         # Filter rows where kind is not 'onetime'
-        filtered_df = df[df['kind'] != 'onetime']
+        filtered_df = df[df[kind_col].str.lower() != 'onetime']
         
         # If no matching rows found
         if filtered_df.empty:
@@ -547,8 +593,8 @@ class FinancialAnalyzer:
         
         # Calculate total of Debit column if it exists
         total_amount = 0
-        if 'Debit' in filtered_df.columns:
-            total_amount = filtered_df['Debit'].sum()
+        if debit_col and debit_col in filtered_df.columns:
+            total_amount = filtered_df[debit_col].sum()
         
         # Return the filtered dataframe in case it's needed for further processing
         return filtered_df
@@ -570,12 +616,19 @@ class FinancialAnalyzer:
         # Make a copy of the data to avoid modifying the original
         df = self.data.copy()
         
+        # Get the date column name (case-insensitive)
+        date_col = self.get_column('date')
+        
+        if not date_col:
+            st.error("Date column not found in data!")
+            return df
+        
         # Convert Date column to datetime format if it isn't already
-        if 'Date' in df.columns and not pd.api.types.is_datetime64_any_dtype(df['Date']):
-            df['Date'] = pd.to_datetime(df['Date'], format=date_format)
+        if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+            df[date_col] = pd.to_datetime(df[date_col], format=date_format)
         
         # Extract day of the week and prefix with a number for sorting
-        df['day'] = df['Date'].dt.dayofweek + 1  # Monday=0, so add 1 to make Monday=1
+        df['day'] = df[date_col].dt.dayofweek + 1  # Monday=0, so add 1 to make Monday=1
         day_map = {
             1: '1Monday',
             2: '2Tuesday',
@@ -589,7 +642,7 @@ class FinancialAnalyzer:
         
         # Calculate week of month
         # Method: Week 1 starts on the 1st of the month, Week 2 starts on the 8th, etc.
-        df['week'] = ((df['Date'].dt.day - 1) // 7) + 1
+        df['week'] = ((df[date_col].dt.day - 1) // 7) + 1
         
         return df
     
@@ -791,10 +844,13 @@ def main():
             st.dataframe(data.head())
             
             # Data validation checks
-            if 'Date' not in data.columns:
+            date_col = analyzer.get_column('date')
+            debit_col = analyzer.get_column('debit')
+            
+            if not date_col:
                 st.error("Required 'Date' column not found in data!")
             
-            if 'Debit' not in data.columns:
+            if not debit_col:
                 st.error("Required 'Debit' column not found in data!")
     
     # Show the welcome screen if toggle is on
@@ -803,7 +859,9 @@ def main():
         st.components.v1.html(welcome_html, height=1800, scrolling=True)
     
     # Always show analysis content when a file is uploaded (regardless of welcome screen state)
-    if uploaded_file is not None and 'Date' in analyzer.data.columns and 'Debit' in analyzer.data.columns:
+    date_col = analyzer.get_column('date')
+    debit_col = analyzer.get_column('debit')
+    if uploaded_file is not None and date_col and debit_col:
         # Display the app title
         st.title("💰 Personal Finance Analyzer")
         
@@ -867,15 +925,50 @@ def main():
                 st.subheader("Configure Analysis")
                 
                 # Get actual categories from data
-                available_categories = list(analyzer.data['category'].unique()) if 'category' in analyzer.data.columns else []
+                category_col = analyzer.get_column('category')
+                if category_col:
+                    # Get unique categories
+                    raw_categories = analyzer.data[category_col].unique()
+                    
+                    # We'll normalize the categories for comparison (case-insensitive)
+                    normalized_to_display = {}  # Maps lowercase category to display version
+                    
+                    # Process categories to handle case variations
+                    for cat in raw_categories:
+                        if isinstance(cat, str):
+                            normalized = cat.lower()
+                            # Keep the first occurrence of each category
+                            if normalized not in normalized_to_display:
+                                normalized_to_display[normalized] = cat
+                    
+                    # Use the original categories for display
+                    available_categories = list(normalized_to_display.values())
+                else:
+                    available_categories = []
                 
                 # Default discretionary and essential categories
                 default_discretionary = ['Dining', 'Entertainment', 'Shopping']
                 default_essential = ['Groceries', 'Utilities', 'Rent', 'Bills']
                 
-                # Filter defaults to only include categories that exist in the data
-                available_disc = [cat for cat in default_discretionary if cat in available_categories]
-                available_ess = [cat for cat in default_essential if cat in available_categories]
+                # Helper function for case-insensitive category matching
+                def category_in_list(category, category_list):
+                    if not isinstance(category, str):
+                        return False
+                    category_lower = category.lower()
+                    return any(isinstance(c, str) and c.lower() == category_lower for c in category_list)
+                
+                # Filter defaults to only include categories that exist in the data (case-insensitive)
+                available_disc = []
+                for avail_cat in available_categories:
+                    if any(isinstance(avail_cat, str) and isinstance(def_cat, str) and 
+                           avail_cat.lower() == def_cat.lower() for def_cat in default_discretionary):
+                        available_disc.append(avail_cat)
+                
+                available_ess = []
+                for avail_cat in available_categories:
+                    if any(isinstance(avail_cat, str) and isinstance(def_cat, str) and 
+                           avail_cat.lower() == def_cat.lower() for def_cat in default_essential):
+                        available_ess.append(avail_cat)
                 
                 # If none of the defaults exist, use empty lists as defaults
                 disc_default = available_disc if available_disc else []
@@ -1003,15 +1096,50 @@ def main():
                 st.subheader("Configure Analysis")
                 
                 # Get actual categories from data
-                available_categories = list(analyzer.data['category'].unique()) if 'category' in analyzer.data.columns else []
+                category_col = analyzer.get_column('category')
+                if category_col:
+                    # Get unique categories
+                    raw_categories = analyzer.data[category_col].unique()
+                    
+                    # We'll normalize the categories for comparison (case-insensitive)
+                    normalized_to_display = {}  # Maps lowercase category to display version
+                    
+                    # Process categories to handle case variations
+                    for cat in raw_categories:
+                        if isinstance(cat, str):
+                            normalized = cat.lower()
+                            # Keep the first occurrence of each category
+                            if normalized not in normalized_to_display:
+                                normalized_to_display[normalized] = cat
+                    
+                    # Use the original categories for display
+                    available_categories = list(normalized_to_display.values())
+                else:
+                    available_categories = []
                 
                 # Default discretionary and essential categories
                 default_discretionary = ['Dining', 'Entertainment', 'Shopping']
                 default_essential = ['Groceries', 'Utilities', 'Rent', 'Bills']
                 
-                # Filter defaults to only include categories that exist in the data
-                available_disc = [cat for cat in default_discretionary if cat in available_categories]
-                available_ess = [cat for cat in default_essential if cat in available_categories]
+                # Helper function for case-insensitive category matching
+                def category_in_list(category, category_list):
+                    if not isinstance(category, str):
+                        return False
+                    category_lower = category.lower()
+                    return any(isinstance(c, str) and c.lower() == category_lower for c in category_list)
+                
+                # Filter defaults to only include categories that exist in the data (case-insensitive)
+                available_disc = []
+                for avail_cat in available_categories:
+                    if any(isinstance(avail_cat, str) and isinstance(def_cat, str) and 
+                           avail_cat.lower() == def_cat.lower() for def_cat in default_discretionary):
+                        available_disc.append(avail_cat)
+                
+                available_ess = []
+                for avail_cat in available_categories:
+                    if any(isinstance(avail_cat, str) and isinstance(def_cat, str) and 
+                           avail_cat.lower() == def_cat.lower() for def_cat in default_essential):
+                        available_ess.append(avail_cat)
                 
                 # If none of the defaults exist, use empty lists as defaults
                 disc_default = available_disc if available_disc else []
@@ -1202,12 +1330,14 @@ def main():
                 """)
                 
                 if st.button("Extract Recurring Expenses"):
-                    if 'kind' in analyzer.data.columns:
+                    kind_col = analyzer.get_column('kind')
+                    if kind_col:
                         recurring_df = analyzer.print_non_onetime_rows()
                         
                         if not recurring_df.empty:
                             # Calculate total
-                            total_amount = recurring_df['Debit'].sum() if 'Debit' in recurring_df.columns else 0
+                            debit_col = analyzer.get_column('debit')
+                            total_amount = recurring_df[debit_col].sum() if debit_col and debit_col in recurring_df.columns else 0
                             
                             # Display stats
                             st.metric("Recurring Expenses Count", len(recurring_df))
@@ -1230,7 +1360,7 @@ def main():
                             st.warning("No recurring expenses found in your data.")
                     else:
                         st.error("Your data does not have a 'kind' column which is required for this analysis.")
-                        st.info("The 'kind' column should categorize expenses as 'recurring', 'subscription', 'onetime', etc.")
+                        st.info("The 'kind' column should categorize expenses as 'recurring', 'subscription', 'onetime', etc. Note that column names are case-insensitive.")
 
 if __name__ == "__main__":
     main()
