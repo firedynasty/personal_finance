@@ -1,0 +1,150 @@
+# Transaction categories and the merchant keywords that map to them.
+#
+# [Category] or [Category/Subcategory] starts a section; one keyword per line below it.
+# Keywords are matched case-insensitively as whole words in the transaction description.
+# When several keywords match, the longest one wins. Lines starting with # are ignored.
+# A section with no keywords (e.g. [Education]) still appears as a choice in the app.
+# [Payment] is special: card payments are labelled but left out of spending totals.
+
+[Food]
+A JOE
+BAGELS
+BI-RITE
+FOODSCO
+GROCER
+GROCERY
+LEAVES CAFE
+NIJIYA
+PEET'S
+PHILZ
+PROMENADE
+SAFEWAY
+STABLE
+STARBUCKS
+SUPERMARKET
+WHOLEFDS
+NATION'S GIANT
+LITTLE SWAN
+
+[Bill]
+BALANCE
+ULTRA
+WELLMANS
+GOOGLE CHESSIS
+
+[Bill/Entertainment]
+CHESSABLE.COM
+DISNEY
+HBO
+HULU
+NETFLIX.COM
+RADIO
+SLING
+SPOTIFY
+YOUTUBE
+VIDEO WAVE
+
+[Bill/Utilities]
+ASTOUND
+COMCAST
+PG&E
+SONIC.NET
+VERIZON
+XFINITY
+
+[Bill/Insurance]
+CSAA INSURANCE
+GEICO
+INSURANCE
+
+[Bill/Software]
+ANTHROPIC
+APPLE
+CLAUDE.AI SUBSCRIPTION
+GITHUB
+MICROSOFT
+MSFT
+OPENAI
+RESUME.IO
+GOOGLE *LOGOS
+
+[Bill/Reading]
+AUDIBLE
+BLOOMBERG
+DAILY WIRE
+ECONOMIST
+J*MARKETWATCH
+KINDLE
+MEDIUM
+NEW YORK TIMES
+NYTIMES
+SCRIBD
+SUBSTACK
+WALL STREET JOURNAL
+WASHINGTON POST
+WSJ
+BUSINESS INSIDER
+
+[Bill/Subscriptions]
+MEMBERSHIP
+PATREON
+SUBSCRIPTION
+GOOGLE *YOUTUBEPREMIUM
+BOOK GLORY
+
+[Education]
+
+[Merchandise]
+AUTOZONE
+BEST BUY
+CYCLERY
+DICKS
+FIV*MISSION
+HOME DEPOT
+OFFICE DEPOT
+ROSS
+SPORTS
+TARGET
+TENNIS EXPRESS
+EBAY
+WORLD MARKET
+SKECHERS-USA
+
+[Transportation]
+ARCO
+BART
+CHEVRON
+CLIPPER
+FASTRAK
+IMPARK
+LYFT
+METER
+MUNI
+PARKING
+SHELL
+SPEEDWAY
+UBER
+
+[Health]
+CLINIC
+CVS
+DENTAL
+DENTIST
+KAISER
+MEDICAL
+PHARMACY
+WALGREENS
+
+[Gifts & Donations]
+CHARITY
+DONATION
+FLOWERS
+GOFUNDME
+RED CROSS
+SALVATION ARMY
+UNICEF
+BRILLIANT.ORG
+USC CLASSICAL
+
+[Payment]
+PAYMENT, THANK YOU
